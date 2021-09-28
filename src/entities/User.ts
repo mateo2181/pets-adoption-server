@@ -1,65 +1,33 @@
-import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique, ManyToMany, JoinTable } from "typeorm";
 import { ObjectType, Field, ID } from "type-graphql";
-import * as bcrypt from "bcrypt";
-import { Role } from "./Role";
+import { Rol } from "./Role";
 
 @ObjectType()
-@Entity('users')
-@Unique(["email"])
-export class User extends BaseEntity {
+export class User {
   @Field()
-  @PrimaryGeneratedColumn()
   id!: number;
 
   @Field()
-  @Column()
-  firstname!: string;
+  firstname?: string;
+
+  @Field(() => String, {nullable: true})
+  lastname?: string | null;
 
   @Field()
-  @Column({ nullable: true })
-  lastname!: string;
+  email?: string;
+
+  @Field(() => String, {nullable: true})
+  password?: string | null;
+
+  @Field(() => String, {nullable: true})
+  picture?: string | null;
 
   @Field()
-  @Column()
-  email!: string;
+  google?: boolean;
 
   @Field()
-  @Column({ nullable: true })
-  password!: string;
+  created_at?: Date;
 
-  @Field()
-  @Column({ nullable: true })
-  picture!: string;
-
-  @Field()
-  @Column({ default: false })
-  google!: boolean;
-
-  @Field()
-  @Column()
-  @CreateDateColumn()
-  created_at!: string;
-
-  @ManyToMany(type => Role)
-  @JoinTable({
-    name: "users_roles", // table name for the junction table of this relation
-    joinColumn: {
-      name: "user_id",
-      referencedColumnName: "id"
-    },
-    inverseJoinColumn: {
-      name: "role_id",
-      referencedColumnName: "id"
-    }
-  })
-  roles!: Role[];
-
-  hashPassword() {
-    this.password = bcrypt.hashSync(this.password, 8);
-  }
-
-  checkIfUnencryptedPasswordIsValid(unencryptedPassword: string) {
-    return bcrypt.compareSync(unencryptedPassword, this.password);
-  }
+  @Field(() => [Rol])
+  roles?: Rol[];
 
 }

@@ -1,23 +1,19 @@
-import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne } from "typeorm";
 import { ObjectType, Field, ID } from "type-graphql";
 import { Pet } from "./Pet";
 import { PetType } from "./PetType";
 
 @ObjectType()
-@Entity('pets_breed')
-export class PetBreed extends BaseEntity {
+export class PetBreed {
   @Field()
-  @PrimaryGeneratedColumn()
   id!: number;
 
   @Field()
-  @Column()
   name!: string;
 
-  @OneToMany(() => Pet, pet => pet.petBreed)
-  pets!: Pet[];
+  @Field(() => [Pet])
+  pets?: Pet[];
 
-  @ManyToOne(() => PetType)
-  petType!: PetType;
+  @Field(() => PetType)
+  petType?: PetType;
 
 }

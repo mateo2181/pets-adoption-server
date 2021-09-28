@@ -1,15 +1,19 @@
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
-import { buildSchema } from 'type-graphql';
-import { PetResolver } from './graphql/resolvers/pet';
-import { UserResolver } from './graphql/resolvers/user';
-import authRouter from './auth';
-import helper from './auth/helper';
-import { authChecker } from './graphql/authorization/authChecker';
+import { buildSchema, registerEnumType } from 'type-graphql';
 import { graphqlUploadExpress } from 'graphql-upload';
 import cors from 'cors';
+import authRouter from './auth';
+import { PetResolver, UserResolver } from './graphql/resolvers';
+import { authChecker } from './graphql/authorization/authChecker';
+import helper from './auth/helper';
+import { prisma } from './prisma';
+import { PetsStatusEnum } from './graphql/types';
 
 export async function startServer() {
+    registerEnumType(PetsStatusEnum, {
+        name: "PetsStatusEnum", // this one is mandatory
+    });
     const app = express();
     app.use(express.json());
     app.use(cors());
@@ -24,7 +28,7 @@ export async function startServer() {
         context: async ({ req }) => {
             const token = req.headers.authorization || '';
             const user = await helper.getUser(token);
-            return { user };
+            return { prisma, user };
         },
     })
 

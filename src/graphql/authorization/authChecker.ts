@@ -9,11 +9,11 @@ export const authChecker: AuthChecker<Context> = ({ context: { user } }, roles) 
     }
     // there are some roles defined now
 
-    if (!user) {
+    if (!user || !user.roles) {
         // and if no user, restrict access
         return false;
     }
-    if (user.roles.some(role => roles.includes(role.name))) {
+    if (user.roles?.some(role => roles.includes(role.name))) {
         // grant access if the roles overlap
         return true;
     }
