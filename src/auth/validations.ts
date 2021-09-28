@@ -1,24 +1,10 @@
 import { Location, ParamSchema } from "express-validator";
 import { User } from "../entities/User";
+import { prisma } from "../prisma";
 
 const locationErrorBody: Location = 'body';
 
 const registrationSchema = {
-    email: {
-        in: locationErrorBody,
-        custom: {
-            options: (value: ParamSchema) => {
-                return User.find({ where: { email: value } }).then(user => {
-                    if (user.length > 0) {
-                        return Promise.reject('Email already in use')
-                    }
-                    return Promise.resolve()
-                }, err => {
-                    return Promise.resolve();
-                })
-            }
-        }
-    },
     firstname: {
         in: locationErrorBody,
         errorMessage: "Firstname field cannot be empty"

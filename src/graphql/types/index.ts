@@ -12,8 +12,8 @@ export interface FileUpload {
     createReadStream(): ReadStream;
 }
 
-export enum StatusPet {
-    HAS_OWNER = "has_owner",
-    ADOPTION = "adoption",
-    LOST = "lost"
-}
+export enum PetsStatusEnum {
+    has_owner = 'has_owner',
+    adoption = 'adoption',
+    lost = 'lost'
+};

@@ -1,52 +1,36 @@
-import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
-import { ObjectType, Field, ID } from "type-graphql";
+import { ObjectType, Field, ID, Int } from "type-graphql";
 import { PetType } from "./PetType";
 import { PetBreed } from "./PetBreed";
 import { User } from "./User";
-import { StatusPet } from "../graphql/types";
+import { PetsStatusEnum } from "../graphql/types";
 import { PetPicture } from "./PetPicture";
 
 @ObjectType()
-@Entity('pets')
-export class Pet extends BaseEntity {
-  @Field()
-  @PrimaryGeneratedColumn()
+export class Pet {
+  @Field(type => ID)
   id!: number;
 
-  @Field()
-  @Column()
+  @Field(() => String)
   name!: string;
 
   @Field(() => String)
-  @Column()
   high!: string;
 
   @Field(() => PetType)
-  @ManyToOne(() => PetType, petType => petType.pets)
-  petType!: PetType;
+  type?: PetType | null;
 
-  @Field(() => PetBreed, { nullable: true })
-  @ManyToOne(() => PetBreed, petBreed => petBreed.pets, { nullable: true })
-  petBreed!: PetBreed;
+  @Field(() => PetBreed)
+  breed!: PetBreed | null;
 
   @Field(() => User)
-  @ManyToOne(() => User)
-  creator!: User;
+  creator!: User | null;
 
-  @Field(() => User)
-  @ManyToOne(() => User)
-  owner!: User;
+  @Field(() => User, {nullable: true})
+  owner?: User | null;
 
-  @Field()
-  @Column({
-    type: "enum",
-    enum: StatusPet,
-    default: StatusPet.HAS_OWNER
-  })
-  status!: StatusPet
+  @Field((type) => PetsStatusEnum)
+  status!: 'has_owner' | 'adoption' | 'lost';
 
   @Field(() => [PetPicture])
-  @OneToMany(() => PetPicture, petPicture => petPicture.pet)
-  pictures!: PetPicture[];
-
+  pictures?: PetPicture[];
 }

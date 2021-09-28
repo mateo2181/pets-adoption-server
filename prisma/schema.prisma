@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Pet {
+  id                          Int              @id @default(autoincrement())
+  name                        String           @db.VarChar
+  high                        String           @db.VarChar
+  petTypeId                   Int?
+  creatorId                   Int?
+  status                      pets_status_enum @default(has_owner)
+  petBreedId                  Int?
+  ownerId                     Int?
+  creator                     User?            @relation("pets_creatorIdTousers", fields: [creatorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  owner                       User?            @relation("pets_ownerIdTousers", fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  breed                       PetBreed?        @relation(fields: [petBreedId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  type                        PetType?         @relation(fields: [petTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pictures                    PetPictures[]
+
+   @@map("pets")
+}
+
+model PetBreed {
+  id        Int        @id @default(autoincrement())
+  name      String     @db.VarChar
+  petTypeId Int?
+  type      PetType?   @relation(fields: [petTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pets      Pet[]
+
+  @@map("pets_breed")
+}
+
+model PetPictures {
+  id         Int      @id @default(autoincrement())
+  path       String   @db.VarChar
+  petId      Int?
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  pet        Pet?     @relation(fields: [petId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("pets_pictures")
+}
+
+model PetType {
+  id         Int          @id @default(autoincrement())
+  name       String       @db.VarChar
+  pets       Pet[]
+  breeds     PetBreed[]
+
+  @@map("pets_type")
+}
+
+model Rol {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar
+  users       User[]
+
+  @@map("roles")
+}
+
+model User {
+  id               Int           @id @default(autoincrement())
+  firstname        String        @db.VarChar
+  lastname         String?       @db.VarChar
+  email            String        @unique
+  password         String?       @db.VarChar
+  created_at       DateTime      @default(now()) @db.Timestamp(6)
+  picture          String?       @db.VarChar
+  google           Boolean       @default(false)
+  petsCreated      Pet[]         @relation("pets_creatorIdTousers")
+  petsOwner        Pet[]         @relation("pets_ownerIdTousers")
+  roles            Rol[]
+
+  @@map("users")
+}
+
+// model UserRol {
+//   rolId   Int
+//   userId  Int
+//   rol     Rol  @relation(fields: [rolId], references: [id], onDelete: Cascade)
+//   user    User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+//   @@id([userId, rolId], map: "PK_c525e9373d63035b9919e578a9c")
+//   @@index([rolId], map: "IDX_1cf664021f00b9cc1ff95e17de")
+//   @@index([userId], map: "IDX_e4435209df12bc1f001e536017")
+
+//   @@map("users_roles")
+// }
+
+enum pets_status_enum {
+  has_owner
+  adoption
+  lost
+}
