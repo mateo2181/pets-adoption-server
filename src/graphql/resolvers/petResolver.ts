@@ -7,6 +7,7 @@ import { createWriteStream } from "fs";
 import path from 'path';
 import { PetPicture } from "../../entities/PetPicture";
 import { Context } from '../../prisma';
+import { PetsStatusEnum } from "../types";
 
 @InputType()
 class PetInput {
@@ -23,13 +24,39 @@ class PetInput {
   petBreedId!: number;
 }
 
+@InputType() 
+class PetFilters {
+  @Field({ nullable: true })
+  petTypeId?: number;
+
+  @Field({ nullable: true })
+  petBreedId?: number;
+
+  @Field({ nullable: true })
+  status?: PetsStatusEnum;
+}
+
 @Resolver(Pet)
 export class PetResolver {
   @Authorized()
   @Query(() => [Pet])
-  async pets(@Ctx() ctx: Context): Promise<Pet[]> {
-    return ctx.prisma.pet.findMany({include: {breed: true, type: true, pictures: true, owner: true, creator: true}});
+  async pets(@Arg('filters', () => PetFilters!) filters: PetFilters, @Ctx() ctx: Context): Promise<Pet[]> {
+    let where: any = {};
+    if(filters.petTypeId) {
+      where['petTypeId'] = {equals: filters.petTypeId};
+    }
+    if(filters.petBreedId) {
+      where['petBreedId'] = {equals: filters.petBreedId};
+    }
+    if(filters.status) {
+      where['status'] = {equals: filters.status};
+    }
+    return ctx.prisma.pet.findMany({
+      where,
+      include: {breed: true, type: true, pictures: true, owner: true, creator: true}
+    });
   }
+  
   @Authorized(["ADMIN"])
   @Mutation(() => Pet)
   async createPet(@Arg('variables', () => PetInput) variables: PetInput, @Ctx() { prisma, user }: Context) {
