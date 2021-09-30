@@ -33,4 +33,7 @@ export class Pet {
 
   @Field(() => [PetPicture])
   pictures?: PetPicture[];
+
+  @Field(() => PetPicture, { nullable: true })
+  pictureDefault?: PetPicture | null
 }

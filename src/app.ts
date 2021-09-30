@@ -9,15 +9,20 @@ import { authChecker } from './graphql/authorization/authChecker';
 import helper from './auth/helper';
 import { prisma } from './prisma';
 import { PetsStatusEnum } from './graphql/types';
+import fileUpload from 'express-fileupload';
+
 
 export async function startServer() {
     registerEnumType(PetsStatusEnum, {
         name: "PetsStatusEnum", // this one is mandatory
     });
     const app = express();
+    
     app.use(express.json());
     app.use(cors());
+    // app.use(fileUpload());
     app.use('/auth', authRouter);
+
     app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }));
     const server = new ApolloServer({
         schema: await buildSchema({

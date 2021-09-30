@@ -15,4 +15,7 @@ export class PetPicture {
   @Field(() => Pet, { nullable: true })
   pet?: Pet;
 
+  @Field({ nullable: true })
+  url?: string;
+
 }

@@ -17,3 +17,24 @@ export enum PetsStatusEnum {
     adoption = 'adoption',
     lost = 'lost'
 };
+
+
+export type File = {
+    filename: string;
+    mimetype: string;
+    encoding: string;
+    stream: ReadStream;
+  }
+  
+  export type UploadedFileResponse = {
+    filename: string;
+    mimetype: string;
+    encoding: string;
+    url: string;
+    filePath: string;
+  }
+  
+  export interface IUploader {
+    singleFileUploadResolver: ({ file } : { file: Promise<FileUpload> }) => Promise<UploadedFileResponse>;
+    getPubicUrlFromFile: (key: string) => string;
+  }
