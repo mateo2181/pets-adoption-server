@@ -3,12 +3,11 @@ import { Resolver, Query, Mutation, Field, InputType, Arg, Authorized, Ctx, ID }
 import { Pet } from "../../entities/Pet";
 import { PetBreed } from "../../entities/PetBreed";
 import { PetType } from "../../entities/PetType";
-import { createWriteStream } from "fs";
-import path from 'path';
 import { PetPicture } from "../../entities/PetPicture";
 import { Context } from '../../prisma';
 import { File, PetsStatusEnum } from "../types";
 import { AwsService } from "../../utils/aws";
+import { getDefaultImageByPetType } from "../helpers";
 
 @InputType()
 class PetInput {
@@ -65,7 +64,9 @@ export class PetResolver {
     }).then((pets: Pet[]) => {
       return pets.map(pet => ({
         ...pet,
-        pictureDefault: pet.pictures?.length ? { ...pet.pictures[0], url: this.awsService.getPubicUrlFromFile(pet.pictures[0].path) } : null
+        pictureDefault: pet.pictures?.length ? { ...pet.pictures[0], url: this.awsService.getPubicUrlFromFile(pet.pictures[0].path || '') }
+                                             : { url: this.awsService.getPubicUrlFromFile(getDefaultImageByPetType(pet.type?.name || '') || '')}
+
         // pictures: pet.pictures?.map(picture => ({ ...picture, url: this.awsService.getPubicUrlFromFile(picture.path) }))
       }));
     });

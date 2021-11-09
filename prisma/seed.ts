@@ -6,6 +6,8 @@ async function fillDatabase() {
     console.log("Running migrations...");
     await prisma.$queryRaw`INSERT INTO public.pets_type(id, name) VALUES (1, 'dog');`;
     await prisma.$queryRaw`INSERT INTO public.pets_type(id, name) VALUES (2, 'cat');`;
+    await prisma.$queryRaw`INSERT INTO public.pets_type(id, name) VALUES (3, 'bunny');`;
+    await prisma.$queryRaw`INSERT INTO public.pets_type(id, name) VALUES (4, 'parrot');`;
     await prisma.$queryRaw`INSERT INTO public.pets_breed(name, "petTypeId") 
                            VALUES ('Pastor Alemán', 1),
                                   ('Labrador', 1),

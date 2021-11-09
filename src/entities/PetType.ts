@@ -1,5 +1,6 @@
 import { ObjectType, Field, ID } from "type-graphql";
 import { Pet } from "./Pet";
+import { PetBreed } from "./PetBreed";
 
 @ObjectType()
 export class PetType {
@@ -11,5 +12,8 @@ export class PetType {
 
   @Field(() => [Pet])
   pets?: Pet[];
+
+  @Field(() => [PetBreed])
+  breeds?: PetBreed[];
 
 }

@@ -4,13 +4,12 @@ import { Pet } from "./Pet";
 @ObjectType()
 export class PetPicture {
   @Field()
-  id!: number;
+  id?: number;
 
   @Field()
-  path!: string;
-
+  path?: string;
   @Field()
-  created_at!: Date;
+  created_at?: Date;
 
   @Field(() => Pet, { nullable: true })
   pet?: Pet;

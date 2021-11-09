@@ -10,6 +10,7 @@ import helper from './auth/helper';
 import { prisma } from './prisma';
 import { PetsStatusEnum } from './graphql/types';
 import fileUpload from 'express-fileupload';
+import { PetTypeResolver } from './graphql/resolvers/petTypeResolver';
 
 
 export async function startServer() {
@@ -26,7 +27,7 @@ export async function startServer() {
     app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }));
     const server = new ApolloServer({
         schema: await buildSchema({
-            resolvers: [PetResolver, UserResolver],
+            resolvers: [PetResolver, PetTypeResolver, UserResolver],
             authChecker
         }),
         uploads: false,
