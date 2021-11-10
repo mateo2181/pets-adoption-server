@@ -33,7 +33,7 @@ class PetFilters {
   petBreedId?: number;
 
   @Field({ nullable: true })
-  status?: PetsStatusEnum;
+  status?: 'has_owner' | 'has_owner' | 'lost';
 }
 
 @Resolver(Pet)

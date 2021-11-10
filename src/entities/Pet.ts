@@ -28,7 +28,7 @@ export class Pet {
   @Field(() => User, {nullable: true})
   owner?: User | null;
 
-  @Field((type) => PetsStatusEnum)
+  @Field(() => PetsStatusEnum)
   status!: 'has_owner' | 'adoption' | 'lost';
 
   @Field(() => [PetPicture])

@@ -1,0 +1,38 @@
+org: mateomerlo
+app: pets-api-graphql
+service: pets-api-graphql
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  region: us-east-2
+  runtime: nodejs14.x
+functions:
+  graphql:
+    # this is formatted as <FILENAME>.<HANDLER>
+    handler: src/app.handler
+    events:
+    - http:
+        path: /
+        method: post
+        cors: true
+    - http:
+        path: /
+        method: get
+        cors: true
+
+plugins:
+  # - serverless-webpack
+  - serverless-plugin-typescript
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true # This is required
+    # packager: 'npm'
+    # packagerOptions:
+      # scripts: # this is the magic
+        # - npx prisma generate 
