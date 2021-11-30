@@ -1,9 +1,9 @@
-export function getDefaultImageByPetType(petType: string) {
+export function getDefaultUrlImageByPetType(petType: string) {
     switch(petType) {
         case 'cat':
-            return process.env.AWS_S3_DEFAULT_IMAGE_CAT;
+            return `https://${process.env.AWS_S3_BUCKET}.s3.amazonaws.com/${process.env.AWS_S3_DEFAULT_IMAGE_CAT}`;
         case 'dog':
-            return process.env.AWS_S3_DEFAULT_IMAGE_DOG;
+            return `https://${process.env.AWS_S3_BUCKET}.s3.amazonaws.com/${process.env.AWS_S3_DEFAULT_IMAGE_DOG}`;
         default:
             return ''
     }

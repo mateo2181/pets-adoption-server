@@ -3,7 +3,7 @@ import { User } from "../../entities/User";
 import { Context } from "../types";
 
 export const authChecker: AuthChecker<Context> = ({ context: { user } }, roles) => {
-    return true;
+    return false;
     // if (roles.length === 0) {
     //     // if `@Authorized()`, check only if user exists
     //     return !!user;

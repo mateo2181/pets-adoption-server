@@ -7,7 +7,8 @@ import { PetPicture } from "../../entities/PetPicture";
 import { Context } from '../../prisma';
 import { File, PetsStatusEnum } from "../types";
 import { AwsService } from "../../utils/aws";
-import { getDefaultImageByPetType } from "../helpers";
+import { getDefaultUrlImageByPetType } from "../helpers";
+import authHelper from '../../auth/helper';
 
 @InputType()
 class PetInput {
@@ -32,8 +33,16 @@ class PetFilters {
   @Field({ nullable: true })
   petBreedId?: number;
 
+  @Field({ defaultValue: 5 })
+  limit?: number;
+
   @Field({ nullable: true })
   status?: 'has_owner' | 'has_owner' | 'lost';
+}
+
+@InputType()
+class MyPetFilters extends PetFilters {
+
 }
 
 @Resolver(Pet)
@@ -60,14 +69,44 @@ export class PetResolver {
     // console.log(img);
     return ctx.prisma.pet.findMany({
       where,
-      include: { breed: true, type: true, pictures: true, owner: true, creator: true }
+      include: { breed: true, type: true, pictures: true, owner: true, creator: true },
+      orderBy: [{ created_at: 'desc' }],
+      take: filters.limit
     }).then((pets: Pet[]) => {
       return pets.map(pet => ({
         ...pet,
-        pictureDefault: pet.pictures?.length ? { ...pet.pictures[0], url: this.awsService.getPubicUrlFromFile(pet.pictures[0].path || '') }
-                                             : { url: this.awsService.getPubicUrlFromFile(getDefaultImageByPetType(pet.type?.name || '') || '')}
-
+        pictureDefault: pet.pictures?.length ? pet.pictures[0] : { path: getDefaultUrlImageByPetType(pet.type?.name || '')}
         // pictures: pet.pictures?.map(picture => ({ ...picture, url: this.awsService.getPubicUrlFromFile(picture.path) }))
+      }));
+    });
+  }
+
+  @Query(() => [Pet])
+  async myPets(@Arg('filters', () => MyPetFilters!) filters: MyPetFilters, @Ctx() { prisma, headers }: Context): Promise<Pet[]> {
+    let where: any = {};
+    const authHeader = headers.authorization as string || '';
+    const payload = authHelper.getPayloadFromToken(authHeader);
+
+    if (filters.petTypeId) {
+      where['petTypeId'] = { equals: filters.petTypeId };
+    }
+    if (filters.petBreedId) {
+      where['petBreedId'] = { equals: filters.petBreedId };
+    }
+    if (filters.status) {
+      where['status'] = { equals: filters.status };
+    }
+    where['creatorId'] = { equals: payload.userId };
+
+    return prisma.pet.findMany({
+      where,
+      include: { breed: true, type: true, pictures: true, creator: true },
+      orderBy: [{ created_at: 'desc' }],
+      take: filters.limit
+    }).then((pets: Pet[]) => {
+      return pets.map(pet => ({
+        ...pet,
+        pictureDefault: pet.pictures?.length ? pet.pictures[0] : { path: getDefaultUrlImageByPetType(pet.type?.name || '')}
       }));
     });
   }
@@ -82,15 +121,17 @@ export class PetResolver {
     if (!pet) {
       throw new Error("Pet not found");
     }
-    return {
-      ...pet,
-      pictures: pet.pictures?.map(picture => ({ ...picture, url: this.awsService.getPubicUrlFromFile(picture.path) }))
-    };
+    return pet;
   }
 
-  @Authorized(["ADMIN"])
+  // @Authorized(["ADMIN"])
   @Mutation(() => Pet)
-  async createPet(@Arg('variables', () => PetInput) variables: PetInput, @Ctx() { prisma, user }: Context) {
+  async createPet(@Arg('variables', () => PetInput) variables: PetInput, @Ctx() { prisma, headers }: Context) {
+    console.log(headers.authorization);
+    const authHeader = headers.authorization as string || '';
+    const payload = authHelper.getPayloadFromToken(authHeader);
+    console.log(payload);
+
     const { name, high, petTypeId, petBreedId } = variables;
     const petType = await prisma.petType.findUnique({ where: { id: petTypeId } });
     if (!petType) {
@@ -111,7 +152,7 @@ export class PetResolver {
           connect: { id: petBreed.id }
         },
         creator: {
-          connect: { id: user.id }
+          connect: { id: payload.userId }
         }
       }
     });
@@ -122,19 +163,25 @@ export class PetResolver {
   async addAvatar(
     @Arg("file", () => GraphQLUpload) file: Promise<FileUpload>,
     @Arg("petId", () => ID) petId: number,
-    @Ctx() { prisma, user }: Context
+    @Ctx() { prisma, headers }: Context
   ): Promise<PetPicture | any> {
 
     try {
+      const authHeader = headers.authorization as string || '';
+      const payload = authHelper.getPayloadFromToken(authHeader);
+
       if (!petId) throw new Error("Invalid Pet ID");
       const pet = await prisma.pet.findUnique({ where: { id: Number(petId) } });
       if (!pet) throw new Error("Pet not found");
+      if(pet.creatorId !== payload.userId) {
+        throw new Error("Shoud be the pet owner to add an picture");
+      }
 
 
       const data = await this.awsService.singleFileUploadResolver({ file });
       const picture = await prisma.petPictures.create({
         data: {
-          path: data.filePath,
+          path: data.url,
           pet: {
             connect: { id: pet.id }
           }

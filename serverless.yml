@@ -8,6 +8,21 @@ provider:
   name: aws
   region: us-east-2
   runtime: nodejs14.x
+  # memorySize: 512
+  timeout: 30
+  # apiGateway:
+    # binaryMediaTypes:
+      # - '*/*'
+  iam:
+    role: arn:aws:iam::010964039577:role/pets-api-graphql-dev-us-east-2-lambdaRole
+  vpc:
+    securityGroupIds:
+      - sg-d90bffae
+    subnetIds:
+      - subnet-3a6ad451
+      - subnet-9c06f2e1
+      - subnet-c7015e8b
+
 functions:
   graphql:
     # this is formatted as <FILENAME>.<HANDLER>
@@ -21,6 +36,27 @@ functions:
         path: /
         method: get
         cors: true
+  signInWithCredentials:
+    handler: src/auth/controller.signInWithCredentials
+    events:
+    - http:
+        path: signInWithCredentials
+        method: post
+        cors: true
+  signIn:
+    handler: src/auth/controller.signIn
+    events:
+    - http:
+        path: signIn
+        method: post
+        cors: true
+  addPetAvatar:
+    handler: src/functions/petImage.addPetAvatar
+    events:
+    - http:
+        path: addPetAvatar
+        method: post
+        cors: true
 
 plugins:
   # - serverless-webpack
@@ -29,6 +65,8 @@ plugins:
   - serverless-dotenv-plugin
 
 custom:
+  serverless-offline:
+    useChildProcesses: true
   webpack:
     webpackConfig: ./webpack.config.js
     includeModules: true # This is required

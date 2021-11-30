@@ -3,29 +3,35 @@ import { Rol } from "./Role";
 
 @ObjectType()
 export class User {
-  @Field()
+  @Field(type => ID)
   id!: number;
 
-  @Field()
-  firstname?: string;
+  @Field(() => String, {nullable: true})
+  name?: string | null;
+
+  // @Field(() => String, {nullable: true})
+  // lastname?: string | null;
 
   @Field(() => String, {nullable: true})
-  lastname?: string | null;
-
-  @Field()
-  email?: string;
+  email?: string | null;
 
   @Field(() => String, {nullable: true})
   password?: string | null;
 
   @Field(() => String, {nullable: true})
-  picture?: string | null;
+  image?: string | null;
+
+  // @Field()
+  // google?: boolean;
+
+  @Field(() => Date, {nullable: true})
+  emailVerified?: Date | null;
 
   @Field()
-  google?: boolean;
+  createdAt?: Date;
 
   @Field()
-  created_at?: Date;
+  updatedAt?: Date;
 
   @Field(() => [Rol])
   roles?: Rol[];

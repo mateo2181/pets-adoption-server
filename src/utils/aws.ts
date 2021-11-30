@@ -14,9 +14,9 @@ export class AwsService implements IUploader {
 
     constructor() {
         AWS.config.update({
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Access key ID
-            secretAccessKey: process.env.AWS_ACCESS_SECRET_KEY, // Secret access key
-            region: process.env.AWS_REGION //Region
+            accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID, // Access key ID
+            secretAccessKey: process.env.AWS_S3_ACCESS_SECRET_KEY, // Secret access key
+            region: process.env.AWS_S3_REGION //Region
         });
         this.s3 = new AWS.S3();
     }
@@ -55,6 +55,72 @@ export class AwsService implements IUploader {
         return { filename, mimetype, encoding, url: link, filePath };
     }
 
+    // async singleFileUploadResolver({ file }: { file: Promise<FileUpload> }): Promise<UploadedFileResponse> {
+    //     try {
+    //         const { createReadStream, filename, mimetype, encoding } = await file;
+
+    //         const filePath = `${Date.now()}_${filename}`;
+
+    //         // // Create an upload stream that goes to S3
+    //         // const uploadStream = this.createUploadStream(filePath);
+
+    //         // // Pipe the file data into the upload stream
+    //         // createReadStream().pipe(uploadStream.writeStream);
+
+    //         // // Start the stream
+    //         // const result = await uploadStream.promise;
+
+    //         // // Get the link representing the uploaded file
+    //         // const link = result.Location;
+
+    //         // return { filename, mimetype, encoding, url: link, filePath };
+    //         const stream = createReadStream();
+    //         const chunks: any = [];
+
+    //         let buffer = await new Promise<Buffer>((resolve, reject) => {
+    //             let buffer: Buffer;
+
+    //             stream.on('data', function (chunk) {
+    //                 chunks.push(chunk);
+    //             });
+
+    //             stream.on('end', function () {
+    //                 buffer = Buffer.concat(chunks);
+    //                 resolve(buffer);
+    //             });
+
+    //             stream.on('error', reject);
+    //         });
+
+    //         buffer = Buffer.concat(chunks);
+    //         // const buffer = Buffer.from(createReadStream , 'base64');
+    //         // const fileInfo = await fileType.fromBuffer(buffer);
+    //         // const detectedExt = fileInfo.ext;
+    //         // const detectedMime = fileInfo.mime;
+
+    //         // if (detectedMime !== body.mime) {
+    //         //     return Responses._400({ message: 'mime types dont match' });
+    //         // }
+
+    //         console.log(`writing image to bucket called ${process.env.AWS_S3_BUCKET}`);
+
+    //         const { $response: { data } } = await this.s3
+    //             .putObject({
+    //                 Body: buffer,
+    //                 Key: filePath,
+    //                 ContentType: mimetype,
+    //                 // ACL: 'public-read',
+    //                 Bucket: process.env.AWS_S3_BUCKET || ''
+    //             })
+    //             .promise();
+
+    //         const url = `https://${process.env.AWS_S3_BUCKET}.s3-${process.env.region}.amazonaws.com/${filePath}`;
+    //         return { filename, mimetype, encoding, url, filePath };
+    //     } catch (error: any) {
+    //         return new Promise((_, reject) => reject(error));
+    //     }
+    // }
+
     getPubicUrlFromFile(key: string): string {
         const signedUrl = this.s3.getSignedUrl("getObject", {
             Key: key,
@@ -72,9 +138,9 @@ export class AwsService implements IUploader {
         })
             .promise()
             .then(res => { return true })
-            .catch(err => { 
+            .catch(err => {
                 console.log(err);
-                return false 
+                return false
             });
     }
 }

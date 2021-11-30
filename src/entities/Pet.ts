@@ -36,4 +36,7 @@ export class Pet {
 
   @Field(() => PetPicture, { nullable: true })
   pictureDefault?: PetPicture | null
+
+  @Field(() => Date)
+  created_at!: Date;
 }

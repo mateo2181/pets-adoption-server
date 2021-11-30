@@ -35,6 +35,6 @@ export type File = {
   }
   
   export interface IUploader {
-    singleFileUploadResolver: ({ file } : { file: Promise<FileUpload> }) => Promise<UploadedFileResponse>;
+    singleFileUploadResolver: ({ file } : { file: any }) => Promise<UploadedFileResponse>;
     getPubicUrlFromFile: (key: string) => string;
   }
