@@ -1,3 +1,4 @@
+import { AuthenticationError } from "apollo-server-lambda";
 import { selectFields } from "express-validator/src/select-fields";
 import * as jwt from "jsonwebtoken";
 import { User } from "../entities/User";
@@ -10,9 +11,13 @@ function createToken(idUser: number): string {
 }
 
 function getPayloadFromToken(token: string): jwt.JwtPayload {
-    const secret = process.env.JWT_SECRET as string;
-    const payload: jwt.JwtPayload = jwt.verify(token, secret) as jwt.JwtPayload;
-    return payload;
+    try {
+        const secret = process.env.JWT_SECRET as string;
+        const payload: jwt.JwtPayload = jwt.verify(token, secret) as jwt.JwtPayload;
+        return payload;
+    } catch (error: any) {
+        throw new AuthenticationError(error.message);
+    }
 }
 
 async function getUser(token: string): Promise<User | null> {

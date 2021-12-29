@@ -22,6 +22,15 @@ export class Pet {
   @Field(() => PetBreed)
   breed!: PetBreed | null;
 
+  @Field()
+  latitude!: number;
+
+  @Field()
+  longitude!: number;
+
+  @Field(() => String)
+  address!: string;
+
   @Field(() => User)
   creator!: User | null;
 

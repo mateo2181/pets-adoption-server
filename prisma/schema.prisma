@@ -77,6 +77,9 @@ model Pet {
   type                        PetType?         @relation(fields: [petTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   created_at                  DateTime         @default(now()) @db.Timestamp(6)
   pictures                    PetPictures[]
+  latitude                    Float
+  longitude                   Float
+  address                     String
 
    @@map("pets")
 }

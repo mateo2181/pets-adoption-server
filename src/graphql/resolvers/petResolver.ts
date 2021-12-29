@@ -1,14 +1,18 @@
 import { GraphQLUpload, FileUpload } from "graphql-upload";
 import { Resolver, Query, Mutation, Field, InputType, Arg, Authorized, Ctx, ID } from "type-graphql";
 import { Pet } from "../../entities/Pet";
-import { PetBreed } from "../../entities/PetBreed";
-import { PetType } from "../../entities/PetType";
 import { PetPicture } from "../../entities/PetPicture";
 import { Context } from '../../prisma';
 import { File, PetsStatusEnum } from "../types";
 import { AwsService } from "../../utils/aws";
 import { getDefaultUrlImageByPetType } from "../helpers";
 import authHelper from '../../auth/helper';
+import { isOwner } from "../authorization/authChecker";
+import { GraphQLError } from "graphql";
+import { ApolloError } from "apollo-server-lambda";
+require('dotenv').config();
+
+const RADIUS = 10000;
 
 @InputType()
 class PetInput {
@@ -23,6 +27,21 @@ class PetInput {
 
   @Field()
   petBreedId!: number;
+
+  @Field()
+  latitude!: number;
+
+  @Field()
+  longitude!: number;
+
+  @Field()
+  address!: string;
+}
+
+@InputType()
+class PetEditInput extends PetInput {
+  @Field()
+  id!: number;
 }
 
 @InputType()
@@ -35,6 +54,12 @@ class PetFilters {
 
   @Field({ defaultValue: 5 })
   limit?: number;
+
+  @Field({ nullable: true })
+  latitude?: number;
+
+  @Field({ nullable: true })
+  longitude?: number;
 
   @Field({ nullable: true })
   status?: 'has_owner' | 'has_owner' | 'lost';
@@ -56,6 +81,10 @@ export class PetResolver {
   @Query(() => [Pet])
   async pets(@Arg('filters', () => PetFilters!) filters: PetFilters, @Ctx() ctx: Context): Promise<Pet[]> {
     let where: any = {};
+    if(filters.latitude && filters.longitude) {
+      const query = await ctx.prisma.$queryRaw<{id: number}[]>`SELECT id FROM "pets" WHERE ST_DWithin(ST_MakePoint(longitude, latitude), ST_MakePoint(${filters.longitude}, ${filters.latitude})::geography, ${RADIUS} * 1000);`;
+      where['id'] = { in: query.map(({ id }) => id) };
+    }
     if (filters.petTypeId) {
       where['petTypeId'] = { equals: filters.petTypeId };
     }
@@ -63,7 +92,7 @@ export class PetResolver {
       where['petBreedId'] = { equals: filters.petBreedId };
     }
     if (filters.status) {
-      where['status'] = { equals: filters.status };
+      where['status'] = { equals: filters.status }; 
     }
     // const img = this.awsService.getPubicUrlFromFile('1632940950135_labrador.jpg');
     // console.log(img);
@@ -75,40 +104,45 @@ export class PetResolver {
     }).then((pets: Pet[]) => {
       return pets.map(pet => ({
         ...pet,
-        pictureDefault: pet.pictures?.length ? pet.pictures[0] : { path: getDefaultUrlImageByPetType(pet.type?.name || '')}
+        pictureDefault: pet.pictures?.length ? pet.pictures[0] : { path: getDefaultUrlImageByPetType('default')}
         // pictures: pet.pictures?.map(picture => ({ ...picture, url: this.awsService.getPubicUrlFromFile(picture.path) }))
       }));
     });
   }
 
   @Query(() => [Pet])
-  async myPets(@Arg('filters', () => MyPetFilters!) filters: MyPetFilters, @Ctx() { prisma, headers }: Context): Promise<Pet[]> {
-    let where: any = {};
-    const authHeader = headers.authorization as string || '';
-    const payload = authHelper.getPayloadFromToken(authHeader);
+  async myPets(@Arg('filters', () => MyPetFilters!) filters: MyPetFilters, @Ctx() { prisma, headers }: Context): Promise<Pet[] | ApolloError> {
+    try {
+      let where: any = {};
+      const authHeader = headers.authorization as string || '';
+      const payload = authHelper.getPayloadFromToken(authHeader);
 
-    if (filters.petTypeId) {
-      where['petTypeId'] = { equals: filters.petTypeId };
-    }
-    if (filters.petBreedId) {
-      where['petBreedId'] = { equals: filters.petBreedId };
-    }
-    if (filters.status) {
-      where['status'] = { equals: filters.status };
-    }
-    where['creatorId'] = { equals: payload.userId };
+      if (filters.petTypeId) {
+        where['petTypeId'] = { equals: filters.petTypeId };
+      }
+      if (filters.petBreedId) {
+        where['petBreedId'] = { equals: filters.petBreedId };
+      }
+      if (filters.status) {
+        where['status'] = { equals: filters.status };
+      }
+      where['creatorId'] = { equals: payload.userId };
 
-    return prisma.pet.findMany({
-      where,
-      include: { breed: true, type: true, pictures: true, creator: true },
-      orderBy: [{ created_at: 'desc' }],
-      take: filters.limit
-    }).then((pets: Pet[]) => {
-      return pets.map(pet => ({
-        ...pet,
-        pictureDefault: pet.pictures?.length ? pet.pictures[0] : { path: getDefaultUrlImageByPetType(pet.type?.name || '')}
-      }));
-    });
+      return prisma.pet.findMany({
+        where,
+        include: { breed: true, type: true, pictures: true, creator: true },
+        orderBy: [{ created_at: 'desc' }],
+        take: filters.limit
+      }).then((pets: Pet[]) => {
+        return pets.map(pet => ({
+          ...pet,
+          pictureDefault: pet.pictures?.length ? pet.pictures[0] : { path: getDefaultUrlImageByPetType('default')}
+        }));
+      });
+    } catch (error: any) {
+      console.log(error);
+      return error;
+    }
   }
 
   @Query(() => Pet)
@@ -132,7 +166,7 @@ export class PetResolver {
     const payload = authHelper.getPayloadFromToken(authHeader);
     console.log(payload);
 
-    const { name, high, petTypeId, petBreedId } = variables;
+    const { name, high, petTypeId, petBreedId, latitude, longitude, address } = variables;
     const petType = await prisma.petType.findUnique({ where: { id: petTypeId } });
     if (!petType) {
       throw new Error("Invalid Pet Type ID");
@@ -145,6 +179,9 @@ export class PetResolver {
       data: {
         name,
         high,
+        latitude,
+        longitude,
+        address,
         type: {
           connect: { id: petType.id }
         },
@@ -157,6 +194,47 @@ export class PetResolver {
       }
     });
     return newPet;
+  }
+
+  @Mutation(() => Pet)
+  async updatePet(@Arg('variables', () => PetEditInput) variables: PetEditInput, @Ctx() context: Context) {
+    try {
+      const { id, name, high, petTypeId, petBreedId, latitude, longitude, address } = variables;
+      const isPetOwner = await isOwner({context, petId: id});
+      if(!isPetOwner) {
+        console.log("ERROR OWNER");
+        throw new Error("You are not the pet owner");
+      }
+
+      const petType = await context.prisma.petType.findUnique({ where: { id: petTypeId } });
+      if (!petType) {
+        throw new Error("Invalid Pet Type ID");
+      }
+      const petBreed = await context.prisma.petBreed.findUnique({ where: { id: petBreedId } });
+      if (!petBreed) {
+        throw new Error("Invalid Pet Breed ID");
+      }
+      const pet = await context.prisma.pet.update({
+        where: {id},
+        data: {
+          name,
+          high,
+          latitude,
+          longitude,
+          address,
+          type: {
+            connect: { id: petType.id }
+          },
+          breed: {
+            connect: { id: petBreed.id }
+          },
+        }
+      });
+      return pet;
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
   }
 
   @Mutation(() => PetPicture)
@@ -198,7 +276,7 @@ export class PetResolver {
   async removeAvatar(
     @Arg("petId", () => ID) petId: number,
     @Arg("petPictureId", () => ID) petPictureId: number,
-    @Ctx() { prisma, user }: Context
+    @Ctx() { prisma, headers }: Context
   ): Promise<PetPicture | any> {
 
     try {

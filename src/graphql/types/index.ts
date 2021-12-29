@@ -1,10 +1,6 @@
 import { User } from "../../entities/User";
 import { ReadStream } from "fs";
 
-export interface Context {
-    user?: User;
-}
-
 export interface FileUpload {
     filename: string;
     mimetype: string;
