@@ -26,6 +26,16 @@ async function fillDatabase() {
 
     // Roles Table
     await prisma.$queryRaw`INSERT INTO public.roles(name) VALUES ('ADMIN'), ('PUBLIC');`;
+    
+    /*
+        To associate a user to ADMIN role 
+    */
+    // await prisma.user.update({
+    //     where: {id: 1},
+    //     data: {
+    //         roles: {connect: {id: 1}}
+    //     }
+    // })
 
 }
 

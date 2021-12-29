@@ -1,10 +1,6 @@
 import { User } from "../../entities/User";
 import { ReadStream } from "fs";
 
-export interface Context {
-    user?: User;
-}
-
 export interface FileUpload {
     filename: string;
     mimetype: string;
@@ -35,6 +31,6 @@ export type File = {
   }
   
   export interface IUploader {
-    singleFileUploadResolver: ({ file } : { file: Promise<FileUpload> }) => Promise<UploadedFileResponse>;
+    singleFileUploadResolver: ({ file } : { file: any }) => Promise<UploadedFileResponse>;
     getPubicUrlFromFile: (key: string) => string;
   }

@@ -1,3 +1,4 @@
+import { AuthenticationError } from "apollo-server-lambda";
 import { selectFields } from "express-validator/src/select-fields";
 import * as jwt from "jsonwebtoken";
 import { User } from "../entities/User";
@@ -6,7 +7,17 @@ import { prisma } from "../prisma";
 
 function createToken(idUser: number): string {
     const secret = process.env.JWT_SECRET as string;
-    return jwt.sign({ userId: idUser }, secret, { expiresIn: "1h" });
+    return jwt.sign({ userId: idUser }, secret, { expiresIn: "24h" });
+}
+
+function getPayloadFromToken(token: string): jwt.JwtPayload {
+    try {
+        const secret = process.env.JWT_SECRET as string;
+        const payload: jwt.JwtPayload = jwt.verify(token, secret) as jwt.JwtPayload;
+        return payload;
+    } catch (error: any) {
+        throw new AuthenticationError(error.message);
+    }
 }
 
 async function getUser(token: string): Promise<User | null> {
@@ -16,7 +27,7 @@ async function getUser(token: string): Promise<User | null> {
             const payload: jwt.JwtPayload = jwt.verify(token, secret) as jwt.JwtPayload;
             const user = await prisma.user.findUnique({
                 where: { id: payload.userId },
-                select: { id: true, firstname: true, lastname: true, email: true, roles: true }
+                select: { id: true, name: true, email: true }
             });
             return user;
         }
@@ -28,5 +39,6 @@ async function getUser(token: string): Promise<User | null> {
 
 export default {
     createToken,
+    getPayloadFromToken,
     getUser
 }

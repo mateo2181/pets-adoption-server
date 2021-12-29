@@ -22,13 +22,22 @@ export class Pet {
   @Field(() => PetBreed)
   breed!: PetBreed | null;
 
+  @Field()
+  latitude!: number;
+
+  @Field()
+  longitude!: number;
+
+  @Field(() => String)
+  address!: string;
+
   @Field(() => User)
   creator!: User | null;
 
   @Field(() => User, {nullable: true})
   owner?: User | null;
 
-  @Field((type) => PetsStatusEnum)
+  @Field(() => PetsStatusEnum)
   status!: 'has_owner' | 'adoption' | 'lost';
 
   @Field(() => [PetPicture])
@@ -36,4 +45,7 @@ export class Pet {
 
   @Field(() => PetPicture, { nullable: true })
   pictureDefault?: PetPicture | null
+
+  @Field(() => Date)
+  created_at!: Date;
 }
